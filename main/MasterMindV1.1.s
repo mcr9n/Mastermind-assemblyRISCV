@@ -16,7 +16,6 @@ li s10, 0
 #sw s1,-72(s0)
 
 .data
-.include "fundo_marrom.data"
 .include "fundo_preto2.0.data"
 .include "proximoround.data"
 
@@ -59,8 +58,8 @@ LOOP1:
 	
 PREPARAPREPARAOPCOES:
 	
-        addi sp,sp,-200			#cria pilha
-        addi s0,sp, 200
+        addi sp,sp,-264			#cria pilha
+        addi s0,sp, 264
         
         li t5, 0
         sw t5, -144(s0)
@@ -338,48 +337,7 @@ ok2:		        	lw t6, -72(s0)
 			
 						
 						
-m_fim2:				la a0, newl  #aqui são printadas as infos referente a fase e as fases e numero de pinos brancos e pretos
-				li a7, 4
-				ecall
-			
-				la a0, Str3
-				li a7, 4
-				ecall
-			
-				lw s2,-52(s0)
-				mv a0, s2
-				li a7, 1
-				ecall
-			
-				la a0, newl
-				li a7, 4
-				ecall
-			
-				la a0, Str1
-				li a7, 4
-				ecall
-					
-				lw t5, -68(s0)
-				mv a0, t5
-				li a7, 1
-				ecall
-			
-				la a0, newl
-				li a7, 4
-				ecall
-			
-				la a0, Str2
-				li a7, 4
-				ecall
-			
-				lw t6, -72(s0)
-				mv a0, t6
-				li a7, 1
-				ecall
-			
-				la a0, newl
-				li a7, 4
-				ecall
+m_fim2:				
 			
 				lw s2, -52(s0)
 				addi s2, s2, 1		#incrementa no contador da main (até 10)
@@ -411,7 +369,7 @@ r_loop:
                         
                         beq t1, t2, r_fim 	# Caso o loop tenha terminado, finaliza a leitura
 			
-			li a7, 12		# Lê o caractere do teclado, que é armazenado em a0
+			li a7, 112		# Lê o caractere do teclado, que é armazenado em a0
 			ecall		
 			
 			lw s1, -48(s0)
@@ -419,22 +377,25 @@ r_loop:
 			sw t3, -84(s0)
 						
 			sb a0, 0(t3)		# Armazena o caractere no array
-							
-			lw t1, -112(s0)													
-			addi t1, t1, 1		# Incrementa o contador
-			sw t1, -112(s0)
 			
 			sb a0 -20(s0)		#salva o caractere ascii para a tradução
 			
-			#j COLOREBOLINHA
+			#################VERIFICA SE É VALIDO############################
 			
-			li t0, 8      	#carrega o limite da iteração
-			sw t0, -92(s0)
-		
-			li t0, 0	#carrega iterador/indice 
-			sw t0, -96(s0)
+			li s1, 0	#registrador que ira mostrar se é valido
+			sw s1, -200(s0)
 			
-			j transformaemcor
+			
+			li s1, 0 
+			sw s1, -192(s0)	#contador iterador 
+			
+			
+			addi s1,s10,5
+			sw s1, -196(s0) #limite do iterador realacionado a quantidade de cores 
+									
+			j e_valido											
+			##################################################################												
+
 					
 		
 r_fim:		ret	
@@ -943,16 +904,6 @@ randomiza_senha:
 	lb s1, 0(s2)		#salvando o valor do caractere em s1
 	sw s1, -180(s0) 	#alocando na posição -180(s0) o valor do caractere
 	
-	###########PRINT STRING#############
-	li a7,11
-	mv a0, s1	
-	ecall
-	
-	la a0, contrabarra
-	li a7, 4
-	ecall
-	####################################
-	
 	li s1, 0
 	sw s1, -184(s0)		#aloca o ireador em s0 - 184
 	
@@ -998,6 +949,57 @@ atribuir_valor:	#aqui iremos colocar o char na posição certa, depois de ter veri
 	
 	j MAIN
 
-			
+										
+e_valido:
+	
+	lw t0, -192(s0)	#iterador
+	
+	la s1, ColorsName
+	add s2, s1, t0		#endereço da cor atualizado com o iterador
+	lb s1, 0(s2)		#char da lista ColorsName carregado em s1
+	lb s2, -20(s0)		#char do teclado a ser estudado carregado 
+	
+	bne s1,s2, nao_validado
+	
+	li s1, 1
+	sw s1, -200(s0)
+	
+nao_validado:
+	
+	lw t1, -196(s0)
+	lw t0, -192(s0)
+	addi t0,t0, 1
+	sw t0, -192(s0)
+	
+	bne t0, t1, e_valido	#fim iteração
+	
+	li t3, 1
+	lw t2,-200(s0)
+	bne t2, t3, musica_erro	#verifica se a0 é igual a 1, se for repete tudo
+	
+	##################CONTINUAÇÃO DO R LOOP ANTIGO##################
+	
+	lw t1, -112(s0)													
+	addi t1, t1, 1		# Incrementa o contador
+	sw t1, -112(s0)
+					
+	li t0, 8      	#carrega o limite da iteração
+	sw t0, -92(s0)
+		
+	li t0, 0	#carrega iterador/indice 
+	sw t0, -96(s0)
+		
+	j transformaemcor
+				
+musica_erro:
+
+	li a7, 31
+	li a2,65 	#Brass (0-7) 
+	li a0, 64	#nota  D
+	li a1, 200	#duração
+	li a3, 100	#volume
+	ecall
+
+	j r_loop
 
 .include "../SYSTEMv21.s"
